@@ -114,7 +114,9 @@ int main()
   /////////////////////////////////////////////////////////////////////
 
    if(checkAll()==-1) return 0;
-   
+ 	f2d= ORB::create();
+    
+    detector = ORB::create(ORB_PRECISION);
 	readImages();
 
   /////////////////////////////////////////////////////////////////////
@@ -122,17 +124,24 @@ int main()
   // INIZIALIZZAZIONI
 
   /////////////////////////////////////////////////////////////////////
+  cap.open(0);
+      for(int i=0;i<10;i++) cap >> img_scene[0];
+        
+      for(int i=0;i<10;i++) cap >> img_scene[1];
 
-
-	f2d= ORB::create();
+      for(int i=0;i<10;i++) cap >> img_scene[2];
     
-    detector = ORB::create(ORB_PRECISION);
+	cout << "immagini catturate";
+	
+	for (int i=0;i< 3;i++)
+	{
+
+		detector->detectAndCompute(img_scene[i], noArray(), keypoints_scene[i], descriptors_scene[i]);
+
+	}
+	
 	
 
-
-    // STEP 4) FOTO
-
-	captureImages(0);
     bool trovato=false;
  
 	string r = colorQuickWin();
@@ -141,7 +150,7 @@ int main()
 		sprintf(risultato,"%s",r.c_str());
 		trovato = true;
 	}
-		
+
 		
 			// vedo se è carta
 	if(trovato == false) 
@@ -151,7 +160,10 @@ int main()
 			sprintf(risultato,"C - Carta");
 			trovato = true;
 		}
+		
 	}
+	
+	return 0;
 		// metodo orb
 	if(trovato == false) // se non è escuso, passo al video
 	{
@@ -206,13 +218,10 @@ int main()
 
 void readImages()
 {
-    // per EMD
-    bg=imread("img/sfondo.jpg");
 
-    carta[0] = imread( "img/cartamarroneok.jpg", 1 );
-    carta[1] = imread( "img/cartamarroneok.jpg", 1 ); // sostituire con carta bianca
     
     // per ORB
+    
   img_object_data[0] = imread("img/mk.jpg" , CV_LOAD_IMAGE_GRAYSCALE );
   nomiRifiuti[0] = "Milka";
   img_object_data[1] = imread("img/cr2.jpg" , CV_LOAD_IMAGE_GRAYSCALE );
@@ -256,19 +265,23 @@ void captureImages(int cam)
 
 	cout << "Inizio cattura img";
 
-    try
-    {
+    //try
+   // {
       for(int i=0;i<10;i++) cap >> img_scene[0];
+        
       for(int i=0;i<10;i++) cap >> img_scene[1];
+      return;
       for(int i=0;i<10;i++) cap >> img_scene[2];
-    }
-          catch(cv::Exception& e)
-    {
+    
+    //}
+    //      catch(cv::Exception& e)
+    //{
 
 
-    }
+    //}
 
 	cout << "immagini catturate";
+	
 	for (int i=0;i< 3;i++)
 	{
 
@@ -377,8 +390,68 @@ bool calcolaEmd()
     Mat mask_scene[3];
 
     // carico immagine sfondo
+    // per EMD
+    bg=imread("img/sfondo.jpg",CV_LOAD_IMAGE_GRAYSCALE);
+
+    carta[0] = imread( "img/cartabiancaok.jpg",1);
+    carta[1] = imread( "img/cartamarroneok.jpg",1); // sostituire con carta bianca
+	
+	Mat maschera,mm;
+    Mat backupFrame;
+    
+    string s="";
+    string t="";
+	
+	// cerco di eliminare lo sfondo dalle immagini catturate
+	/*
+	 *     bg=imread("sfondo.jpg", CV_LOAD_IMAGE_GRAYSCALE);
+	 * 
+			src_base = imread( "mano.jpg" , CV_LOAD_IMAGE_GRAYSCALE);
+			absdiff(bg,src_base,src_test1);
+			threshold(src_test1,src_test1,40,255,THRESH_BINARY);
+			src_base = imread( "mano.jpg");
+			src_base.copyTo(src_test2, src_test1);
 
 
+		imshow("sottratta",src_test2);
+
+	 * */
+	for(int i=0;i<IMG_SCENE ;i++)
+	{
+		backupFrame = img_scene[i].clone();
+		cvtColor( img_scene[i], img_scene[i], cv::COLOR_BGR2GRAY  );
+		absdiff(bg,img_scene[i],maschera);
+		threshold(maschera,maschera,40,255,THRESH_BINARY);
+		backupFrame.copyTo(mm, maschera);
+		s="img" + i;
+		t="imgaaaaaaa" + i;
+		imshow(s,mm);
+		imshow(t,backupFrame);
+
+	}
+	
+	waitKey(0);
+	
+	
+	
+    
+    /*
+     * 
+     * 
+     * 
+     * 
+   
+		bg=imread("sfondo.jpg", CV_LOAD_IMAGE_GRAYSCALE);
+		src_base = imread( "mano.jpg" , CV_LOAD_IMAGE_GRAYSCALE);
+		absdiff(bg,src_base,src_test1);
+		threshold(src_test1,src_test1,40,255,THRESH_BINARY);
+		src_base = imread( "mano.jpg");
+		src_base.copyTo(src_test2, src_test1);
+		imshow("sottratta",src_test2);
+		* 
+		* 
+   */
+    
     for(int i=0;i<imgCarta;i++)
       {
         carta[i] = carta[i] - bg; // correggere la sottrazione
@@ -391,6 +464,7 @@ bool calcolaEmd()
     inRange(hsv_carta[i], Scalar(0, 15, 50), Scalar(180, 255, 255), mask_carta[i]);
 
       }
+  
 
     for(int i=0;i<3;i++)
       {
@@ -432,8 +506,10 @@ bool calcolaEmd()
   // calcolo EMD
   for(int i=0;i<imgCarta;i++)   /// per ogni img carta
   {
+	  
   for (int j=0;j<3;j++) // per ogni fotogramma
   {
+	
   vector<cv::Mat> sig(3);
   MatND hist[2];
 
@@ -461,8 +537,9 @@ bool calcolaEmd()
     if(i>0){
 
         float emdResult = EMD(sig[0],sig[i],cv::DIST_L1);
-        if (emdResult<4) return true;
-      }
+        cout << "EMD:" << emdResult << endl;
+        if (emdResult<4000) return true;
+     }
     }
    }
  }
@@ -624,6 +701,7 @@ string colorQuickWin()
 		ris = "P - Fonzies"; 
 		return ris;
 	}
+	cout << perc << endl << flush;
 
 	// fine da ripetere per ogni prodotto
 
