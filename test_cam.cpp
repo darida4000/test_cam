@@ -132,7 +132,18 @@ int main()
       for(int i=0;i<10;i++) cap >> img_scene[2];
     
 	cout << "immagini catturate";
-	
+		// elimino lo sfondo da  immagini catturate
+			Mat maschera,mm;
+    Mat backupFrame;
+	for(int i=0;i<IMG_SCENE ;i++)
+	{
+		backupFrame = img_scene[i].clone();
+		cvtColor( img_scene[i], img_scene[i], cv::COLOR_BGR2GRAY  );
+		absdiff(bg,img_scene[i],maschera);
+		threshold(maschera,maschera,40,255,THRESH_BINARY);
+		backupFrame.copyTo(img_scene[i], maschera);
+
+	}
 	for (int i=0;i< 3;i++)
 	{
 
@@ -143,8 +154,8 @@ int main()
 	
 
     bool trovato=false;
- 
-	string r = colorQuickWin();
+ string r;
+	/*string r = colorQuickWin();
 	if(r != "")
 	{
 		sprintf(risultato,"%s",r.c_str());
@@ -162,19 +173,18 @@ int main()
 		}
 		
 	}
-	
-	return 0;
+	*/
 		// metodo orb
-	if(trovato == false) // se non è escuso, passo al video
-	{
+	//if(trovato == false) // se non è escuso, passo al video
+	//{
 		r = imageDetection();
 		if(r != "")
 		{
 			sprintf(risultato,"%s",r.c_str());
 			trovato = true;
 		}
-	}
-	
+	//}
+	cout << risultato << endl;
 	
 
    
@@ -219,7 +229,11 @@ int main()
 void readImages()
 {
 
-    
+        // per EMD
+    bg=imread("img/sfondo.jpg",CV_LOAD_IMAGE_GRAYSCALE);
+
+    carta[0] = imread( "img/cartabiancaok.jpg",1);
+    carta[1] = imread( "img/cartamarroneok.jpg",1); // sostituire con carta bianca
     // per ORB
     
   img_object_data[0] = imread("img/mk.jpg" , CV_LOAD_IMAGE_GRAYSCALE );
@@ -228,12 +242,12 @@ void readImages()
   nomiRifiuti[1] = "Croccantelle";
   img_object_data[2] = imread("img/cr1.jpg" , CV_LOAD_IMAGE_GRAYSCALE );
   nomiRifiuti[2] = "Croccantelle";
-  img_object_data[3] = imread("img/sc2.jpg" , CV_LOAD_IMAGE_GRAYSCALE );
-  nomiRifiuti[3] = "Schiacciatelle";
+  img_object_data[3] = imread("img/ra1.jpg" , CV_LOAD_IMAGE_GRAYSCALE );
+  nomiRifiuti[3] = "rasp";
   img_object_data[4] = imread("img/fz1.jpg" , CV_LOAD_IMAGE_GRAYSCALE );
   nomiRifiuti[4] = "Fonzie";
-  img_object_data[5] = imread("img/ps1.jpg" , CV_LOAD_IMAGE_GRAYSCALE );
-  nomiRifiuti[5] = "Pizzottelle";
+  img_object_data[5] = imread("img/ra2.jpg" , CV_LOAD_IMAGE_GRAYSCALE );
+  nomiRifiuti[5] = "Raspy 2";
   img_object_data[6] = imread("img/sc3.jpg" , CV_LOAD_IMAGE_GRAYSCALE );
   nomiRifiuti[6] = "Schiacciatelle";
   img_object_data[7] = imread("img/fz2.jpg" , CV_LOAD_IMAGE_GRAYSCALE );
@@ -336,9 +350,9 @@ double homographyRating(Mat* H)
 int findMaxIndex()
 {
 
-    /*cout << "determinanti:" << endl;
+    cout << "determinanti:" << endl;
     cout << "--------------" << endl;
-*/
+
     double max=0;
     int indice = -1;
     int k;
@@ -347,8 +361,8 @@ int findMaxIndex()
 
       for(int h=0;h<3;h++)
       {
-  //      cout << " " << determinanti[k][h];
-        if (determinanti[k][h] > 1) continue;
+        cout << " " << determinanti[k][h];
+        if (determinanti[k][h] > 1.5) continue; // modificata  soglia esclusione
         if(determinanti[k][h] > max)
         {
 
@@ -389,72 +403,36 @@ bool calcolaEmd()
     Mat mask_carta[imgCarta];
     Mat mask_scene[3];
 
-    // carico immagine sfondo
-    // per EMD
-    bg=imread("img/sfondo.jpg",CV_LOAD_IMAGE_GRAYSCALE);
-
-    carta[0] = imread( "img/cartabiancaok.jpg",1);
-    carta[1] = imread( "img/cartamarroneok.jpg",1); // sostituire con carta bianca
-	
+   
 	Mat maschera,mm;
     Mat backupFrame;
     
     string s="";
     string t="";
 	
-	// cerco di eliminare lo sfondo dalle immagini catturate
-	/*
-	 *     bg=imread("sfondo.jpg", CV_LOAD_IMAGE_GRAYSCALE);
-	 * 
-			src_base = imread( "mano.jpg" , CV_LOAD_IMAGE_GRAYSCALE);
-			absdiff(bg,src_base,src_test1);
-			threshold(src_test1,src_test1,40,255,THRESH_BINARY);
-			src_base = imread( "mano.jpg");
-			src_base.copyTo(src_test2, src_test1);
-
-
-		imshow("sottratta",src_test2);
-
-	 * */
+	// elimino lo sfondo da  immagini catturate
 	for(int i=0;i<IMG_SCENE ;i++)
 	{
 		backupFrame = img_scene[i].clone();
 		cvtColor( img_scene[i], img_scene[i], cv::COLOR_BGR2GRAY  );
 		absdiff(bg,img_scene[i],maschera);
 		threshold(maschera,maschera,40,255,THRESH_BINARY);
-		backupFrame.copyTo(mm, maschera);
-		s="img" + i;
-		t="imgaaaaaaa" + i;
-		imshow(s,mm);
-		imshow(t,backupFrame);
+		backupFrame.copyTo(img_scene[i], maschera);
 
 	}
 	
-	waitKey(0);
+	//waitKey(0);
 	
 	
-	
-    
-    /*
-     * 
-     * 
-     * 
-     * 
-   
-		bg=imread("sfondo.jpg", CV_LOAD_IMAGE_GRAYSCALE);
-		src_base = imread( "mano.jpg" , CV_LOAD_IMAGE_GRAYSCALE);
-		absdiff(bg,src_base,src_test1);
-		threshold(src_test1,src_test1,40,255,THRESH_BINARY);
-		src_base = imread( "mano.jpg");
-		src_base.copyTo(src_test2, src_test1);
-		imshow("sottratta",src_test2);
-		* 
-		* 
-   */
-    
+	imshow("terzo  fotogramma",img_scene[1]);
+    	// elimino lo sfondo da  immagini di carta
     for(int i=0;i<imgCarta;i++)
       {
-        carta[i] = carta[i] - bg; // correggere la sottrazione
+        backupFrame = carta[i].clone();
+		cvtColor( carta[i], carta[i], cv::COLOR_BGR2GRAY  );
+		absdiff(bg,carta[i],maschera);
+		threshold(maschera,maschera,40,255,THRESH_BINARY);
+		backupFrame.copyTo(carta[i], maschera);
 
       /// Converto in HSV
         cvtColor( carta[i], hsv_carta[i], COLOR_BGR2HSV );
@@ -464,12 +442,13 @@ bool calcolaEmd()
     inRange(hsv_carta[i], Scalar(0, 15, 50), Scalar(180, 255, 255), mask_carta[i]);
 
       }
-  
+      imshow("carta originaria",carta[0]);
+ waitKey(0);
 
     for(int i=0;i<3;i++)
       {
         scene[i] = img_scene[i].clone();
-        scene[i] = scene[i] - bg;
+        //scene[i] = scene[i] - bg;
         cvtColor( scene[i], hsv_scene[i], COLOR_BGR2HSV );
         inRange(hsv_scene[i], Scalar(0, 15, 50), Scalar(180, 255, 255), mask_scene[i]);
       }
@@ -538,7 +517,7 @@ bool calcolaEmd()
 
         float emdResult = EMD(sig[0],sig[i],cv::DIST_L1);
         cout << "EMD:" << emdResult << endl;
-        if (emdResult<4000) return true;
+        if (emdResult>4000) return true;
      }
     }
    }
@@ -774,7 +753,7 @@ string imageDetection()
 	}
 	else
 	{
-
+         cout << "Trovato";
 		ris = "P - " + nomiRifiuti[index];
     }
   return ris;
